@@ -16,8 +16,15 @@ COPY . /var/www/html/
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
-# إعدادات PHP-FPM (البحث عن php.ini وتعديله)
-RUN find /usr -name "php.ini" 2>/dev/null | head -1 | xargs sed -i 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/' 2>/dev/null || true
+# إنشاء مجلد للـ socket
+RUN mkdir -p /run/php && chmod 755 /run/php
+
+# إعدادات PHP-FPM - إيقاف chroot وإعدادات أخرى
+RUN echo "[www]" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
+    && echo "listen = 9000" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
+    && echo "listen.mode = 0660" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
+    && echo "user = www-data" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
+    && echo "group = www-data" >> /usr/local/etc/php-fpm.d/zz-docker.conf
 
 # إنشاء ملف إعدادات nginx
 COPY nginx.conf /etc/nginx/nginx.conf
