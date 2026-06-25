@@ -22,8 +22,8 @@ RUN find /usr -name "php.ini" 2>/dev/null | head -1 | xargs sed -i 's/;cgi.fix_p
 # إنشاء ملف إعدادات nginx
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# إنشاء ملف إعدادات supervisord
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+# إنشاء ملف إعدادات supervisord في المكان الصحيح
+COPY supervisord_root.conf /etc/supervisord.conf
 
 # إنشاء مجلد logs
 RUN mkdir -p /var/log/supervisor
@@ -31,5 +31,5 @@ RUN mkdir -p /var/log/supervisor
 # فتح المنفذ
 EXPOSE 80
 
-# بدء الخدمات
-CMD ["/usr/bin/supervisord", "-n"]
+# بدء الخدمات مع تحديد مسار ملف الإعداد
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
