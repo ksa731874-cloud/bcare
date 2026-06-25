@@ -16,8 +16,8 @@ COPY . /var/www/html/
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 
-# إعدادات PHP-FPM
-RUN sed -i 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/' /usr/local/etc/php/php.ini
+# إعدادات PHP-FPM (البحث عن php.ini وتعديله)
+RUN find /usr -name "php.ini" 2>/dev/null | head -1 | xargs sed -i 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/' 2>/dev/null || true
 
 # إنشاء ملف إعدادات nginx
 COPY nginx.conf /etc/nginx/nginx.conf
