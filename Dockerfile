@@ -1,42 +1,24 @@
-FROM php:8.2-fpm
+FROM php:8.2-apache
 
-# تثبيت nginx و Supervisord
-RUN apt-get update && apt-get install -y \
-    nginx \
-    supervisor \
-    && rm -rf /var/lib/apt/lists/*
+# إزالة ملفات Apache الافتراضية التي قد تسبب تعارض
+RUN rm -f /etc/apache2/mods-enabled/mpm_event.conf \
+    /etc/apache2/mods-enabled/mpm_worker.conf \
+    /etc/apache2/mods-enabled/mpm_prefork.conf
 
-# إنشاء مجلد www
-RUN mkdir -p /var/www/html
+# تعطيل جميع MPMs
+RUN a2dismod mpm_event mpm_worker mpm_prefork
+
+# تفعيل mpm_prefork فقط
+RUN a2enmod mpm_prefork
+
+# تثبيت إضافات قاعدة البيانات
+RUN docker-php-ext-install mysqli pdo pdo_mysql
 
 # نسخ ملفات المشروع
 COPY . /var/www/html/
 
 # ضبط الصلاحيات
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html
+RUN chown -R www-data:www-data /var/www/html && \
+    chmod -R 755 /var/www/html
 
-# إنشاء مجلد للـ socket
-RUN mkdir -p /run/php && chmod 755 /run/php
-
-# إعدادات PHP-FPM - إيقاف chroot وإعدادات أخرى
-RUN echo "[www]" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
-    && echo "listen = 9000" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
-    && echo "listen.mode = 0660" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
-    && echo "user = www-data" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
-    && echo "group = www-data" >> /usr/local/etc/php-fpm.d/zz-docker.conf
-
-# إنشاء ملف إعدادات nginx
-COPY nginx.conf /etc/nginx/nginx.conf
-
-# إنشاء ملف إعدادات supervisord في المكان الصحيح
-COPY supervisord_root.conf /etc/supervisord.conf
-
-# إنشاء مجلد logs
-RUN mkdir -p /var/log/supervisor
-
-# فتح المنفذ
 EXPOSE 80
-
-# بدء الخدمات مع تحديد مسار ملف الإعداد
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
